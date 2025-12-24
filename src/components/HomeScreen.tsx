@@ -22,7 +22,7 @@ const HomeScreen = ({ onStart }: HomeScreenProps) => {
         </h1>
         
         <p className="text-xl md:text-2xl text-muted-foreground mb-2">
-          🎄 Edição de Natal 2024 🎄
+          🎄 Edição de Natal 2025 🎄
         </p>
         
         <p className="text-muted-foreground mb-12 max-w-md mx-auto">
