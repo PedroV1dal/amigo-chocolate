@@ -112,11 +112,10 @@ const DrawingScreen = ({
               
               {revealStep >= 2 && (
                 <div className="animate-fade-in mb-4">
-                  <p className="text-lg text-muted-foreground">O último sorteio...</p>
-                  <p className="text-2xl font-display font-bold text-accent mt-2">
-                    {currentDrawer}
+                  <p className="text-lg text-muted-foreground">Revelando a vencedora...</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    ({currentDrawer} está sorteando)
                   </p>
-                  <p className="text-muted-foreground">vai tirar...</p>
                 </div>
               )}
               

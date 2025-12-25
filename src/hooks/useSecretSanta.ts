@@ -95,16 +95,18 @@ export const useSecretSanta = () => {
 
   const startDrawing = useCallback(() => {
     if (participants.length < 3) return false;
-    
+
     // Shuffle participants to create a random draw order
     const shuffledOrder = [...participants].sort(() => Math.random() - 0.5);
-    
+
     // First drawer is the first in the shuffled order
     const firstDrawer = shuffledOrder[0];
-    
+
     // Everyone is available to be drawn initially
+    // The first drawer CAN be drawn at any time (including by the last drawer)
+    // This ensures randomness - it's not predictable when they'll be drawn
     const available = [...participants];
-    
+
     setDrawOrder(shuffledOrder);
     setCurrentDrawerIndex(0);
     setCurrentDrawer(firstDrawer);
@@ -112,7 +114,7 @@ export const useSecretSanta = () => {
     setDrawResults([]);
     setCurrentDrawnName(null);
     setGameState("drawing");
-    
+
     return true;
   }, [participants]);
 
