@@ -7,11 +7,21 @@ interface DrawResult {
   drawn: string;
 }
 
+// Fisher-Yates shuffle algorithm (proper random shuffle)
+const shuffleArray = <T>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 // Helper function to create a random circular chain
 // Each person draws the next in the shuffled array, last draws first (circular)
 const createRandomCircularChain = (participants: string[]): DrawResult[] => {
-  // Shuffle participants randomly
-  const shuffled = [...participants].sort(() => Math.random() - 0.5);
+  // Shuffle participants using Fisher-Yates (proper random shuffle)
+  const shuffled = shuffleArray(participants);
 
   // Create chain: each person draws the next, last person draws first (closes circle)
   const chain: DrawResult[] = [];
