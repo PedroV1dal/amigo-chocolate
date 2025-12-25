@@ -147,21 +147,21 @@ export const useSecretSanta = () => {
       const newAvailable = availableToDraw.filter(p => p !== currentDrawnName);
       setAvailableToDraw(newAvailable);
       
-      // Update drawer index
+      // Move to next drawer in the shuffled order
       const nextIndex = currentDrawerIndex + 1;
       setCurrentDrawerIndex(nextIndex);
       
       // Check if we've finished all draws
-      if (newAvailable.length === 0) {
+      if (nextIndex >= drawOrder.length) {
         setGameState("finished");
       } else {
-        // The DRAWN person becomes the next drawer (chain rule)
-        setCurrentDrawer(currentDrawnName);
+        // Next drawer is the next person in the random order
+        setCurrentDrawer(drawOrder[nextIndex]);
       }
       
       setCurrentDrawnName(null);
     }
-  }, [currentDrawnName, currentDrawer, availableToDraw, drawResults, currentDrawerIndex]);
+  }, [currentDrawnName, currentDrawer, availableToDraw, drawResults, currentDrawerIndex, drawOrder]);
 
   const resetGame = useCallback(() => {
     setParticipants([]);
