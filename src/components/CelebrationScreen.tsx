@@ -72,14 +72,15 @@ const CelebrationScreen = ({ results, onReset }: CelebrationScreenProps) => {
           </p>
         </div>
 
-        {/* Last Result Highlight */}
+        {/* Last Result Highlight - Winner */}
         {lastResult && (
-          <div className="glass-card p-6 mb-8 border-2 border-accent/50 animate-scale-in">
-            <p className="text-sm text-muted-foreground mb-2">Último sorteado:</p>
-            <div className="flex items-center justify-center gap-4 text-2xl">
-              <span className="font-semibold">{lastResult.drawer}</span>
-              <span className="text-accent">→</span>
-              <span className="font-bold text-accent">{lastResult.drawn}</span>
+          <div className="glass-card p-6 mb-8 border-2 border-gold/50 bg-gradient-to-br from-gold/10 to-accent/10 animate-scale-in">
+            <p className="text-sm text-muted-foreground mb-3">🏆 Vencedora do Sorteio:</p>
+            <div className="flex flex-col items-center justify-center gap-2">
+              <span className="text-4xl font-bold text-gold animate-pulse-glow">{lastResult.drawn}</span>
+              <p className="text-xs text-muted-foreground/70">
+                (sorteada por {lastResult.drawer})
+              </p>
             </div>
           </div>
         )}
