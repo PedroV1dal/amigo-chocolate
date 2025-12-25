@@ -14,6 +14,8 @@ export const useSecretSanta = () => {
   const [currentDrawer, setCurrentDrawer] = useState<string | null>(null);
   const [currentDrawnName, setCurrentDrawnName] = useState<string | null>(null);
   const [availableToDraw, setAvailableToDraw] = useState<string[]>([]);
+  const [drawOrder, setDrawOrder] = useState<string[]>([]); // Order of who draws (sequential)
+  const [currentDrawerIndex, setCurrentDrawerIndex] = useState<number>(0);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -22,12 +24,16 @@ export const useSecretSanta = () => {
     const savedDrawResults = localStorage.getItem("secretSanta_drawResults");
     const savedCurrentDrawer = localStorage.getItem("secretSanta_currentDrawer");
     const savedAvailable = localStorage.getItem("secretSanta_available");
+    const savedDrawOrder = localStorage.getItem("secretSanta_drawOrder");
+    const savedDrawerIndex = localStorage.getItem("secretSanta_drawerIndex");
 
     if (savedParticipants) setParticipants(JSON.parse(savedParticipants));
     if (savedState) setGameState(savedState as GameState);
     if (savedDrawResults) setDrawResults(JSON.parse(savedDrawResults));
     if (savedCurrentDrawer) setCurrentDrawer(savedCurrentDrawer);
     if (savedAvailable) setAvailableToDraw(JSON.parse(savedAvailable));
+    if (savedDrawOrder) setDrawOrder(JSON.parse(savedDrawOrder));
+    if (savedDrawerIndex) setCurrentDrawerIndex(parseInt(savedDrawerIndex));
   }, []);
 
   // Save to localStorage on changes
@@ -52,6 +58,14 @@ export const useSecretSanta = () => {
   useEffect(() => {
     localStorage.setItem("secretSanta_available", JSON.stringify(availableToDraw));
   }, [availableToDraw]);
+
+  useEffect(() => {
+    localStorage.setItem("secretSanta_drawOrder", JSON.stringify(drawOrder));
+  }, [drawOrder]);
+
+  useEffect(() => {
+    localStorage.setItem("secretSanta_drawerIndex", currentDrawerIndex.toString());
+  }, [currentDrawerIndex]);
 
   const addParticipant = useCallback((name: string) => {
     const trimmedName = name.trim();
@@ -82,14 +96,17 @@ export const useSecretSanta = () => {
   const startDrawing = useCallback(() => {
     if (participants.length < 3) return false;
     
-    // Pick a random first drawer
-    const randomIndex = Math.floor(Math.random() * participants.length);
-    const firstDrawer = participants[randomIndex];
+    // Shuffle participants to create a random draw order
+    const shuffledOrder = [...participants].sort(() => Math.random() - 0.5);
     
-    // Everyone is available to be drawn (including the first drawer, who can be drawn by others)
-    // The first drawer just can't draw themselves, which is handled in performDraw
+    // First drawer is the first in the shuffled order
+    const firstDrawer = shuffledOrder[0];
+    
+    // Everyone is available to be drawn initially
     const available = [...participants];
     
+    setDrawOrder(shuffledOrder);
+    setCurrentDrawerIndex(0);
     setCurrentDrawer(firstDrawer);
     setAvailableToDraw(available);
     setDrawResults([]);
@@ -130,25 +147,21 @@ export const useSecretSanta = () => {
       const newAvailable = availableToDraw.filter(p => p !== currentDrawnName);
       setAvailableToDraw(newAvailable);
       
-      // Check if this was the last draw
-      if (newAvailable.length === 0) {
-        // Last draw: the drawn person draws the first drawer to close the circle
-        const firstDrawer = updatedResults[0].drawer;
-        
-        const finalResult = {
-          drawer: currentDrawnName,
-          drawn: firstDrawer,
-        };
-        setDrawResults(prev => [...prev, finalResult]);
+      // Move to next drawer in the draw order (not who was drawn)
+      const nextIndex = currentDrawerIndex + 1;
+      
+      // Check if we've finished all draws
+      if (nextIndex >= drawOrder.length) {
         setGameState("finished");
       } else {
-        // The DRAWN person becomes the next drawer (chain: Esther -> Emily, so Emily draws next)
-        setCurrentDrawer(currentDrawnName);
+        // Next drawer is the next person in the shuffled order
+        setCurrentDrawerIndex(nextIndex);
+        setCurrentDrawer(drawOrder[nextIndex]);
       }
       
       setCurrentDrawnName(null);
     }
-  }, [currentDrawnName, currentDrawer, availableToDraw, drawResults]);
+  }, [currentDrawnName, currentDrawer, availableToDraw, drawResults, currentDrawerIndex, drawOrder]);
 
   const resetGame = useCallback(() => {
     setParticipants([]);
@@ -157,12 +170,16 @@ export const useSecretSanta = () => {
     setCurrentDrawer(null);
     setCurrentDrawnName(null);
     setAvailableToDraw([]);
+    setDrawOrder([]);
+    setCurrentDrawerIndex(0);
     
     localStorage.removeItem("secretSanta_participants");
     localStorage.removeItem("secretSanta_state");
     localStorage.removeItem("secretSanta_drawResults");
     localStorage.removeItem("secretSanta_currentDrawer");
     localStorage.removeItem("secretSanta_available");
+    localStorage.removeItem("secretSanta_drawOrder");
+    localStorage.removeItem("secretSanta_drawerIndex");
   }, []);
 
   const cancelRound = useCallback(() => {
@@ -171,6 +188,8 @@ export const useSecretSanta = () => {
     setCurrentDrawer(null);
     setCurrentDrawnName(null);
     setAvailableToDraw([]);
+    setDrawOrder([]);
+    setCurrentDrawerIndex(0);
     setParticipants([]);
     
     localStorage.removeItem("secretSanta_participants");
@@ -178,13 +197,14 @@ export const useSecretSanta = () => {
     localStorage.removeItem("secretSanta_drawResults");
     localStorage.removeItem("secretSanta_currentDrawer");
     localStorage.removeItem("secretSanta_available");
+    localStorage.removeItem("secretSanta_drawOrder");
+    localStorage.removeItem("secretSanta_drawerIndex");
   }, []);
 
   const startGame = useCallback(() => {
     setGameState("registration");
   }, []);
 
-  const currentDrawerIndex = drawResults.length;
   const totalParticipants = participants.length;
   // Since the current drawer is also in availableToDraw, we need to subtract 1 for valid options
   const validOptionsCount = availableToDraw.filter(p => p !== currentDrawer).length;
