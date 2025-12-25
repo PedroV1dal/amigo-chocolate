@@ -161,7 +161,7 @@ const DrawingScreen = ({
                 </p>
                 {isLastDraw && (
                   <p className="text-muted-foreground mt-2">
-                    Resta apenas uma pessoa para sortear!
+                    Resta apenas uma pessoa para ser sorteada!
                   </p>
                 )}
               </div>

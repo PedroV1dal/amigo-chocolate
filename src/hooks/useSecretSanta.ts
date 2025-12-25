@@ -86,8 +86,9 @@ export const useSecretSanta = () => {
     const randomIndex = Math.floor(Math.random() * participants.length);
     const firstDrawer = participants[randomIndex];
     
-    // Everyone except the first drawer is available to be drawn
-    const available = participants.filter(p => p !== firstDrawer);
+    // Everyone is available to be drawn (including the first drawer, who can be drawn by others)
+    // The first drawer just can't draw themselves, which is handled in performDraw
+    const available = [...participants];
     
     setCurrentDrawer(firstDrawer);
     setAvailableToDraw(available);
@@ -101,9 +102,14 @@ export const useSecretSanta = () => {
   const performDraw = useCallback(() => {
     if (!currentDrawer || availableToDraw.length === 0) return "";
     
-    // Pick a random person from available (excluding current drawer - already not in list)
-    const randomIndex = Math.floor(Math.random() * availableToDraw.length);
-    const drawn = availableToDraw[randomIndex];
+    // Filter out the current drawer from available options (can't draw yourself)
+    const validOptions = availableToDraw.filter(p => p !== currentDrawer);
+    
+    if (validOptions.length === 0) return "";
+    
+    // Pick a random person from valid options
+    const randomIndex = Math.floor(Math.random() * validOptions.length);
+    const drawn = validOptions[randomIndex];
     
     setCurrentDrawnName(drawn);
     return drawn;
@@ -180,8 +186,10 @@ export const useSecretSanta = () => {
 
   const currentDrawerIndex = drawResults.length;
   const totalParticipants = participants.length;
-  const isLastDraw = availableToDraw.length === 1;
-  const isPenultimateDraw = availableToDraw.length === 2;
+  // Since the current drawer is also in availableToDraw, we need to subtract 1 for valid options
+  const validOptionsCount = availableToDraw.filter(p => p !== currentDrawer).length;
+  const isLastDraw = validOptionsCount === 1;
+  const isPenultimateDraw = validOptionsCount === 2;
 
   return {
     participants,
