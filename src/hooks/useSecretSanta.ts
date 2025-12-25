@@ -121,21 +121,15 @@ export const useSecretSanta = () => {
     if (participants.length < 3) return false;
 
     // Create a random circular chain where each person draws the next
+    // The shuffle inside createRandomCircularChain provides randomness
     // Example: Ana→Bruno, Bruno→Diana, Diana→Carlos, Carlos→Ana (closes circle)
     const chain = createRandomCircularChain(participants);
 
-    // Choose random starting point to make it unpredictable who "wins"
-    const startIndex = Math.floor(Math.random() * chain.length);
+    // Don't reorder! The shuffle already makes it random
+    // If we reorder, the first drawer always becomes the winner (last drawn)
+    const firstDrawer = chain[0].drawer;
 
-    // Reorder chain to start from the chosen index
-    const reorderedChain = [
-      ...chain.slice(startIndex),
-      ...chain.slice(0, startIndex)
-    ];
-
-    const firstDrawer = reorderedChain[0].drawer;
-
-    setDrawChain(reorderedChain);
+    setDrawChain(chain);
     setCurrentDrawerIndex(0);
     setCurrentDrawer(firstDrawer);
     setAvailableToDraw([...participants]); // For slot machine display only
