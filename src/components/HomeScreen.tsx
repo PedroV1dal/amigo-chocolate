@@ -7,7 +7,7 @@ interface HomeScreenProps {
 
 const HomeScreen = ({ onStart }: HomeScreenProps) => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 relative z-10">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 relative z-20">
       <div className="text-center animate-fade-in">
         {/* Logo/Icon */}
         <div className="mb-8">
