@@ -116,19 +116,19 @@ export const useSecretSanta = () => {
         drawer: currentDrawer,
         drawn: currentDrawnName,
       };
-      setDrawResults(prev => [...prev, newResult]);
+      
+      const updatedResults = [...drawResults, newResult];
+      setDrawResults(updatedResults);
       
       // Remove the drawn person from available
       const newAvailable = availableToDraw.filter(p => p !== currentDrawnName);
       setAvailableToDraw(newAvailable);
       
-      // The drawn person becomes the next drawer (chain drawing)
-      // Unless it's the last draw (only one person left to draw - the first drawer)
+      // Check if this was the last draw
       if (newAvailable.length === 0) {
-        // Last draw: the current drawn person draws the first drawer (who started)
-        const firstDrawer = drawResults.length > 0 ? drawResults[0].drawer : currentDrawer;
+        // Last draw: the drawn person draws the first drawer to close the circle
+        const firstDrawer = updatedResults[0].drawer;
         
-        // Add final result: last drawn person draws the first drawer
         const finalResult = {
           drawer: currentDrawnName,
           drawn: firstDrawer,
@@ -136,7 +136,7 @@ export const useSecretSanta = () => {
         setDrawResults(prev => [...prev, finalResult]);
         setGameState("finished");
       } else {
-        // Continue chain: drawn person becomes the drawer
+        // The DRAWN person becomes the next drawer (chain: Esther -> Emily, so Emily draws next)
         setCurrentDrawer(currentDrawnName);
       }
       
