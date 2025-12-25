@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Shuffle, ArrowRight, Gift, PartyPopper, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Shuffle, ArrowRight, Gift, PartyPopper, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SlotMachine from "./SlotMachine";
 
@@ -29,12 +29,31 @@ const DrawingScreen = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawnName, setDrawnName] = useState<string | null>(null);
   const [showSlotMachine, setShowSlotMachine] = useState(false);
+  const [showFinalReveal, setShowFinalReveal] = useState(false);
+  const [revealStep, setRevealStep] = useState(0);
 
   const handleDraw = () => {
-    setIsDrawing(true);
-    setShowSlotMachine(true);
-    const result = onDraw();
-    setDrawnName(result);
+    if (isLastDraw) {
+      // Último sorteio - animação especial de revelação
+      setShowFinalReveal(true);
+      setRevealStep(1);
+      const result = onDraw();
+      setDrawnName(result);
+      
+      // Animação em etapas
+      setTimeout(() => setRevealStep(2), 800);
+      setTimeout(() => setRevealStep(3), 1600);
+      setTimeout(() => {
+        setRevealStep(4);
+        setIsDrawing(false);
+      }, 2400);
+    } else {
+      // Sorteio normal com slot machine
+      setIsDrawing(true);
+      setShowSlotMachine(true);
+      const result = onDraw();
+      setDrawnName(result);
+    }
   };
 
   const handleSlotComplete = () => {
@@ -44,6 +63,8 @@ const DrawingScreen = ({
   const handleNext = () => {
     setDrawnName(null);
     setShowSlotMachine(false);
+    setShowFinalReveal(false);
+    setRevealStep(0);
     onConfirm();
   };
 
@@ -80,27 +101,89 @@ const DrawingScreen = ({
 
         {/* Main Card */}
         <div className="glass-card p-8 text-center mb-6">
-          {!showSlotMachine ? (
+          {showFinalReveal ? (
+            // Animação especial para o último sorteio
+            <div className="py-8">
+              {revealStep >= 1 && (
+                <div className="animate-fade-in mb-4">
+                  <Sparkles className="w-12 h-12 text-gold mx-auto animate-pulse-glow" />
+                </div>
+              )}
+              
+              {revealStep >= 2 && (
+                <div className="animate-fade-in mb-4">
+                  <p className="text-lg text-muted-foreground">O último sorteio...</p>
+                  <p className="text-2xl font-display font-bold text-accent mt-2">
+                    {currentDrawer}
+                  </p>
+                  <p className="text-muted-foreground">vai tirar...</p>
+                </div>
+              )}
+              
+              {revealStep >= 3 && (
+                <div className="animate-scale-in my-6">
+                  <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent mb-4 animate-pulse-glow">
+                    <Gift className="w-12 h-12 text-white" />
+                  </div>
+                </div>
+              )}
+              
+              {revealStep >= 4 && drawnName && (
+                <div className="animate-scale-in">
+                  <p className="text-4xl md:text-5xl font-display font-bold text-gold mb-8">
+                    🎁 {drawnName} 🎁
+                  </p>
+                  <Button
+                    onClick={handleNext}
+                    className="bg-accent text-accent-foreground animate-pulse-glow text-lg px-10 py-5 h-auto"
+                  >
+                    <PartyPopper className="mr-2 h-5 w-5" />
+                    🎉 Ver Resultado Final!
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : !showSlotMachine ? (
             <>
               <div className="mb-6">
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/20 mb-4">
-                  <Gift className="w-10 h-10 text-primary" />
+                  {isLastDraw ? (
+                    <Sparkles className="w-10 h-10 text-gold animate-pulse-glow" />
+                  ) : (
+                    <Gift className="w-10 h-10 text-primary" />
+                  )}
                 </div>
                 <h2 className="text-2xl md:text-3xl font-display font-bold mb-2">
-                  Vez de sortear:
+                  {isLastDraw ? "🎄 Último Sorteio! 🎄" : "Vez de sortear:"}
                 </h2>
                 <p className="text-3xl md:text-4xl font-bold text-accent">
                   {currentDrawer}
                 </p>
+                {isLastDraw && (
+                  <p className="text-muted-foreground mt-2">
+                    Resta apenas uma pessoa para sortear!
+                  </p>
+                )}
               </div>
 
               <Button
                 onClick={handleDraw}
                 disabled={isDrawing}
-                className="btn-christmas text-lg px-10 py-5 h-auto"
+                className={`text-lg px-10 py-5 h-auto ${
+                  isLastDraw ? "bg-gold text-gold-foreground hover:bg-gold/90 animate-pulse-glow" : "btn-christmas"
+                }`}
               >
-                <Shuffle className="mr-2 h-5 w-5" />
-                Sortear Próximo
+                {isLastDraw ? (
+                  <>
+                    <Sparkles className="mr-2 h-5 w-5" />
+                    Revelar o Último!
+                  </>
+                ) : (
+                  <>
+                    <Shuffle className="mr-2 h-5 w-5" />
+                    Sortear Próximo
+                  </>
+                )}
               </Button>
             </>
           ) : (
@@ -119,20 +202,11 @@ const DrawingScreen = ({
                 <div className="mt-8 animate-fade-in">
                   <Button
                     onClick={handleNext}
-                    className={`text-lg px-10 py-5 h-auto ${
-                      isLastDraw 
-                        ? "bg-accent text-accent-foreground animate-pulse-glow" 
-                        : "btn-christmas"
-                    }`}
+                    className="btn-christmas text-lg px-10 py-5 h-auto"
                   >
-                    {isLastDraw ? (
+                    {isPenultimateDraw ? (
                       <>
-                        <PartyPopper className="mr-2 h-5 w-5" />
-                        🎉 Ver Resultado Final!
-                      </>
-                    ) : isPenultimateDraw ? (
-                      <>
-                        <Gift className="mr-2 h-5 w-5" />
+                        <Sparkles className="mr-2 h-5 w-5" />
                         Revelar Último Sorteado!
                       </>
                     ) : (
@@ -148,22 +222,24 @@ const DrawingScreen = ({
           )}
         </div>
 
-        {/* Waiting list */}
-        <div className="glass-card p-4">
-          <p className="text-sm text-muted-foreground mb-2">
-            Disponíveis para sortear:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {availableToDraw.map((name, i) => (
-              <span
-                key={i}
-                className="px-3 py-1 bg-muted/50 rounded-full text-sm text-muted-foreground"
-              >
-                {name}
-              </span>
-            ))}
+        {/* Waiting list - hide when showing final reveal or is last draw */}
+        {!isLastDraw && !showFinalReveal && (
+          <div className="glass-card p-4">
+            <p className="text-sm text-muted-foreground mb-2">
+              Disponíveis para sortear:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {availableToDraw.map((name, i) => (
+                <span
+                  key={i}
+                  className="px-3 py-1 bg-muted/50 rounded-full text-sm text-muted-foreground"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
