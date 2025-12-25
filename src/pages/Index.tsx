@@ -10,10 +10,11 @@ const Index = () => {
   const {
     participants,
     gameState,
-    drawOrder,
     drawResults,
     currentDrawerIndex,
     currentDrawer,
+    availableToDraw,
+    totalParticipants,
     isLastDraw,
     isPenultimateDraw,
     addParticipant,
@@ -24,6 +25,7 @@ const Index = () => {
     performDraw,
     confirmDraw,
     resetGame,
+    cancelRound,
   } = useSecretSanta();
 
   return (
@@ -42,6 +44,7 @@ const Index = () => {
           onEdit={editParticipant}
           onDelete={removeParticipant}
           onFinalize={startDrawing}
+          onCancel={cancelRound}
         />
       )}
 
@@ -49,12 +52,13 @@ const Index = () => {
         <DrawingScreen
           currentDrawer={currentDrawer}
           currentDrawerIndex={currentDrawerIndex}
-          totalParticipants={drawOrder.length}
-          participants={drawOrder}
+          totalParticipants={totalParticipants}
+          availableToDraw={availableToDraw}
           isLastDraw={isLastDraw}
           isPenultimateDraw={isPenultimateDraw}
           onDraw={performDraw}
           onConfirm={confirmDraw}
+          onCancel={cancelRound}
         />
       )}
 

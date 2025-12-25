@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserPlus, Check, ArrowRight, AlertCircle } from "lucide-react";
+import { UserPlus, Check, ArrowRight, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -21,6 +21,7 @@ interface RegistrationScreenProps {
   onEdit: (index: number, newName: string) => boolean;
   onDelete: (index: number) => void;
   onFinalize: () => boolean;
+  onCancel: () => void;
 }
 
 const RegistrationScreen = ({
@@ -29,6 +30,7 @@ const RegistrationScreen = ({
   onEdit,
   onDelete,
   onFinalize,
+  onCancel,
 }: RegistrationScreenProps) => {
   const [inputName, setInputName] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -119,6 +121,18 @@ const RegistrationScreen = ({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative z-10">
+      {/* Cancel Button - Fixed at top right */}
+      <div className="fixed top-4 right-4 z-50">
+        <Button
+          onClick={onCancel}
+          variant="outline"
+          className="bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+        >
+          <X className="mr-2 h-4 w-4" />
+          Cancelar
+        </Button>
+      </div>
+
       <div className="w-full max-w-lg animate-fade-in">
         {/* Header */}
         <div className="text-center mb-8">

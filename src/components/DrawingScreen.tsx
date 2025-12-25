@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Shuffle, ArrowRight, Gift, PartyPopper } from "lucide-react";
+import { Shuffle, ArrowRight, Gift, PartyPopper, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SlotMachine from "./SlotMachine";
 
@@ -7,22 +7,24 @@ interface DrawingScreenProps {
   currentDrawer: string;
   currentDrawerIndex: number;
   totalParticipants: number;
-  participants: string[];
+  availableToDraw: string[];
   isLastDraw: boolean;
   isPenultimateDraw: boolean;
   onDraw: () => string;
   onConfirm: () => void;
+  onCancel: () => void;
 }
 
 const DrawingScreen = ({
   currentDrawer,
   currentDrawerIndex,
   totalParticipants,
-  participants,
+  availableToDraw,
   isLastDraw,
   isPenultimateDraw,
   onDraw,
   onConfirm,
+  onCancel,
 }: DrawingScreenProps) => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawnName, setDrawnName] = useState<string | null>(null);
@@ -49,6 +51,18 @@ const DrawingScreen = ({
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative z-10">
+      {/* Cancel Button - Fixed at top right */}
+      <div className="fixed top-4 right-4 z-50">
+        <Button
+          onClick={onCancel}
+          variant="outline"
+          className="bg-destructive/10 border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+        >
+          <X className="mr-2 h-4 w-4" />
+          Cancelar Rodada
+        </Button>
+      </div>
+
       <div className="w-full max-w-lg animate-fade-in">
         {/* Progress */}
         <div className="mb-8">
@@ -96,7 +110,7 @@ const DrawingScreen = ({
               </h2>
               
               <SlotMachine
-                names={participants.filter(p => p !== currentDrawer)}
+                names={availableToDraw}
                 finalName={drawnName || ""}
                 onComplete={handleSlotComplete}
               />
@@ -137,10 +151,10 @@ const DrawingScreen = ({
         {/* Waiting list */}
         <div className="glass-card p-4">
           <p className="text-sm text-muted-foreground mb-2">
-            Aguardando sortear:
+            Disponíveis para sortear:
           </p>
           <div className="flex flex-wrap gap-2">
-            {participants.slice(currentDrawerIndex + 1).map((name, i) => (
+            {availableToDraw.map((name, i) => (
               <span
                 key={i}
                 className="px-3 py-1 bg-muted/50 rounded-full text-sm text-muted-foreground"
