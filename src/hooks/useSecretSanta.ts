@@ -7,14 +7,32 @@ interface DrawResult {
   drawn: string;
 }
 
+// Helper function to create a random circular chain
+// Each person draws the next in the shuffled array, last draws first (circular)
+const createRandomCircularChain = (participants: string[]): DrawResult[] => {
+  // Shuffle participants randomly
+  const shuffled = [...participants].sort(() => Math.random() - 0.5);
+
+  // Create chain: each person draws the next, last person draws first (closes circle)
+  const chain: DrawResult[] = [];
+  for (let i = 0; i < shuffled.length; i++) {
+    const drawer = shuffled[i];
+    const drawn = shuffled[(i + 1) % shuffled.length]; // % makes it circular
+    chain.push({ drawer, drawn });
+  }
+
+  return chain;
+};
+
 export const useSecretSanta = () => {
   const [participants, setParticipants] = useState<string[]>([]);
   const [gameState, setGameState] = useState<GameState>("home");
   const [drawResults, setDrawResults] = useState<DrawResult[]>([]);
   const [currentDrawer, setCurrentDrawer] = useState<string | null>(null);
   const [currentDrawnName, setCurrentDrawnName] = useState<string | null>(null);
-  const [availableToDraw, setAvailableToDraw] = useState<string[]>([]);
-  const [drawOrder, setDrawOrder] = useState<string[]>([]); // Order of who draws (sequential)
+  const [drawChain, setDrawChain] = useState<DrawResult[]>([]); // Pre-defined circular chain
+  const [availableToDraw, setAvailableToDraw] = useState<string[]>([]); // Kept for slot machine display
+  const [drawOrder, setDrawOrder] = useState<string[]>([]); // Deprecated but kept for compatibility
   const [currentDrawerIndex, setCurrentDrawerIndex] = useState<number>(0);
 
   // Load from localStorage on mount
@@ -23,6 +41,7 @@ export const useSecretSanta = () => {
     const savedState = localStorage.getItem("secretSanta_state");
     const savedDrawResults = localStorage.getItem("secretSanta_drawResults");
     const savedCurrentDrawer = localStorage.getItem("secretSanta_currentDrawer");
+    const savedDrawChain = localStorage.getItem("secretSanta_drawChain");
     const savedAvailable = localStorage.getItem("secretSanta_available");
     const savedDrawOrder = localStorage.getItem("secretSanta_drawOrder");
     const savedDrawerIndex = localStorage.getItem("secretSanta_drawerIndex");
@@ -31,6 +50,7 @@ export const useSecretSanta = () => {
     if (savedState) setGameState(savedState as GameState);
     if (savedDrawResults) setDrawResults(JSON.parse(savedDrawResults));
     if (savedCurrentDrawer) setCurrentDrawer(savedCurrentDrawer);
+    if (savedDrawChain) setDrawChain(JSON.parse(savedDrawChain));
     if (savedAvailable) setAvailableToDraw(JSON.parse(savedAvailable));
     if (savedDrawOrder) setDrawOrder(JSON.parse(savedDrawOrder));
     if (savedDrawerIndex) setCurrentDrawerIndex(parseInt(savedDrawerIndex));
@@ -67,6 +87,10 @@ export const useSecretSanta = () => {
     localStorage.setItem("secretSanta_drawerIndex", currentDrawerIndex.toString());
   }, [currentDrawerIndex]);
 
+  useEffect(() => {
+    localStorage.setItem("secretSanta_drawChain", JSON.stringify(drawChain));
+  }, [drawChain]);
+
   const addParticipant = useCallback((name: string) => {
     const trimmedName = name.trim();
     if (trimmedName && !participants.includes(trimmedName)) {
@@ -96,21 +120,26 @@ export const useSecretSanta = () => {
   const startDrawing = useCallback(() => {
     if (participants.length < 3) return false;
 
-    // Shuffle participants to create a random draw order
-    const shuffledOrder = [...participants].sort(() => Math.random() - 0.5);
+    // Create a random circular chain where each person draws the next
+    // Example: Ana→Bruno, Bruno→Diana, Diana→Carlos, Carlos→Ana (closes circle)
+    const chain = createRandomCircularChain(participants);
 
-    // First drawer is the first in the shuffled order
-    const firstDrawer = shuffledOrder[0];
+    // Choose random starting point to make it unpredictable who "wins"
+    const startIndex = Math.floor(Math.random() * chain.length);
 
-    // Everyone is available to be drawn initially
-    // The first drawer CAN be drawn at any time (including by the last drawer)
-    // This ensures randomness - it's not predictable when they'll be drawn
-    const available = [...participants];
+    // Reorder chain to start from the chosen index
+    const reorderedChain = [
+      ...chain.slice(startIndex),
+      ...chain.slice(0, startIndex)
+    ];
 
-    setDrawOrder(shuffledOrder);
+    const firstDrawer = reorderedChain[0].drawer;
+
+    setDrawChain(reorderedChain);
     setCurrentDrawerIndex(0);
     setCurrentDrawer(firstDrawer);
-    setAvailableToDraw(available);
+    setAvailableToDraw([...participants]); // For slot machine display only
+    setDrawOrder([]); // Not used anymore but kept for compatibility
     setDrawResults([]);
     setCurrentDrawnName(null);
     setGameState("drawing");
@@ -119,20 +148,20 @@ export const useSecretSanta = () => {
   }, [participants]);
 
   const performDraw = useCallback(() => {
-    if (!currentDrawer || availableToDraw.length === 0) return "";
-    
-    // Filter out the current drawer from available options (can't draw yourself)
-    const validOptions = availableToDraw.filter(p => p !== currentDrawer);
-    
-    if (validOptions.length === 0) return "";
-    
-    // Pick a random person from valid options
-    const randomIndex = Math.floor(Math.random() * validOptions.length);
-    const drawn = validOptions[randomIndex];
-    
+    if (!currentDrawer || drawChain.length === 0) return "";
+
+    // Get the pre-defined person to draw from the chain
+    const currentPair = drawChain[currentDrawerIndex];
+
+    if (!currentPair || currentPair.drawer !== currentDrawer) {
+      console.error("Chain inconsistency! Expected drawer:", currentDrawer, "but got:", currentPair?.drawer);
+      return "";
+    }
+
+    const drawn = currentPair.drawn;
     setCurrentDrawnName(drawn);
     return drawn;
-  }, [currentDrawer, availableToDraw]);
+  }, [currentDrawer, drawChain, currentDrawerIndex]);
 
   const confirmDraw = useCallback(() => {
     if (currentDrawnName && currentDrawer) {
@@ -141,29 +170,26 @@ export const useSecretSanta = () => {
         drawer: currentDrawer,
         drawn: currentDrawnName,
       };
-      
+
       const updatedResults = [...drawResults, newResult];
       setDrawResults(updatedResults);
-      
-      // Remove the drawn person from available
-      const newAvailable = availableToDraw.filter(p => p !== currentDrawnName);
-      setAvailableToDraw(newAvailable);
-      
-      // Move to next drawer in the shuffled order
+
+      // Move to next in the chain
       const nextIndex = currentDrawerIndex + 1;
       setCurrentDrawerIndex(nextIndex);
-      
-      // Check if we've finished all draws
-      if (nextIndex >= drawOrder.length) {
+
+      // Check if we've finished all draws in the chain
+      if (nextIndex >= drawChain.length) {
         setGameState("finished");
       } else {
-        // Next drawer is the next person in the random order
-        setCurrentDrawer(drawOrder[nextIndex]);
+        // Next drawer is the next person in the circular chain
+        // In circular chain, next drawer is who was just drawn!
+        setCurrentDrawer(drawChain[nextIndex].drawer);
       }
-      
+
       setCurrentDrawnName(null);
     }
-  }, [currentDrawnName, currentDrawer, availableToDraw, drawResults, currentDrawerIndex, drawOrder]);
+  }, [currentDrawnName, currentDrawer, drawResults, currentDrawerIndex, drawChain]);
 
   const resetGame = useCallback(() => {
     setParticipants([]);
@@ -171,14 +197,16 @@ export const useSecretSanta = () => {
     setDrawResults([]);
     setCurrentDrawer(null);
     setCurrentDrawnName(null);
+    setDrawChain([]);
     setAvailableToDraw([]);
     setDrawOrder([]);
     setCurrentDrawerIndex(0);
-    
+
     localStorage.removeItem("secretSanta_participants");
     localStorage.removeItem("secretSanta_state");
     localStorage.removeItem("secretSanta_drawResults");
     localStorage.removeItem("secretSanta_currentDrawer");
+    localStorage.removeItem("secretSanta_drawChain");
     localStorage.removeItem("secretSanta_available");
     localStorage.removeItem("secretSanta_drawOrder");
     localStorage.removeItem("secretSanta_drawerIndex");
@@ -189,15 +217,17 @@ export const useSecretSanta = () => {
     setDrawResults([]);
     setCurrentDrawer(null);
     setCurrentDrawnName(null);
+    setDrawChain([]);
     setAvailableToDraw([]);
     setDrawOrder([]);
     setCurrentDrawerIndex(0);
     setParticipants([]);
-    
+
     localStorage.removeItem("secretSanta_participants");
     localStorage.removeItem("secretSanta_state");
     localStorage.removeItem("secretSanta_drawResults");
     localStorage.removeItem("secretSanta_currentDrawer");
+    localStorage.removeItem("secretSanta_drawChain");
     localStorage.removeItem("secretSanta_available");
     localStorage.removeItem("secretSanta_drawOrder");
     localStorage.removeItem("secretSanta_drawerIndex");
@@ -208,10 +238,9 @@ export const useSecretSanta = () => {
   }, []);
 
   const totalParticipants = participants.length;
-  // Since the current drawer is also in availableToDraw, we need to subtract 1 for valid options
-  const validOptionsCount = availableToDraw.filter(p => p !== currentDrawer).length;
-  const isLastDraw = validOptionsCount === 1;
-  const isPenultimateDraw = validOptionsCount === 2;
+  // Check if current draw is the last one in the chain
+  const isLastDraw = drawChain.length > 0 && currentDrawerIndex === drawChain.length - 1;
+  const isPenultimateDraw = drawChain.length > 0 && currentDrawerIndex === drawChain.length - 2;
 
   return {
     participants,
