@@ -120,7 +120,7 @@ const RegistrationScreen = ({
   const canFinalize = participants.length >= 3;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative z-10">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8 relative z-20">
       {/* Cancel Button - Fixed at top right */}
       <div className="fixed top-4 right-4 z-50">
         <Button
